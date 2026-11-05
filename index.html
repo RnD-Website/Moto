@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Corvo Eclipse — Built to Come Apart</title>
+<meta name="description" content="Corvo Eclipse: a custom motorcycle in thirteen precision-made components. Scroll to tour the build, one part at a time.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#050506; --ink:#f4f5f6; --silver:#aeb3ba; --dim:#7d828a; --line:rgba(255,255,255,.16); --accent:#c9b08a;
+    --pad:clamp(20px,4.2vw,64px);
+    --cond:'Instrument Serif','Times New Roman',Georgia,serif;                 /* display: tall, high-contrast serif in title case */
+    --sans:'Geist','Helvetica Neue',Arial,sans-serif;                          /* body */
+    --mono:'Geist','Helvetica Neue',Arial,sans-serif;                          /* small wide-tracked capitals (labels, nav, buttons) */
+    --ease:cubic-bezier(.22,.8,.18,1);
+    --hero-vw:7.3; --final-vw:4.9; --panel-vw:5.8; --nav-px:12.5px; --hero-y:0; --final-top:50%; --btn-speed:3.8s; --btn-edge:.18;   /* live-tunable from the DialKit panel */
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html { background:var(--bg); }
+  body { background:var(--bg); color:var(--ink); font-family:var(--sans); font-weight:300; -webkit-font-smoothing:antialiased; }
+  a { color:inherit; text-decoration:none; }
+  button { font:inherit; color:inherit; background:none; border:0; cursor:pointer; }
+  :focus-visible { outline:1px solid var(--accent); outline-offset:4px; }
+  .cap { font-family:var(--mono); font-size:10.5px; letter-spacing:.28em; text-transform:uppercase; font-weight:500; }
+
+  /* header */
+  header { position:fixed; inset:0 0 auto 0; height:60px; z-index:30; display:flex; align-items:center; justify-content:space-between;
+    padding:0 var(--pad); border-bottom:1px solid var(--line); background:linear-gradient(rgba(5,5,6,.88),rgba(5,5,6,.4)); }
+  .brand { font-family:var(--sans); font-size:14px; letter-spacing:.46em; font-weight:600; text-transform:uppercase; padding-left:2px; }
+  nav { display:flex; gap:clamp(22px,3.2vw,52px); }
+  nav button { font-family:var(--mono); font-size:var(--nav-px); letter-spacing:.28em; text-transform:uppercase; color:var(--silver); font-weight:500; padding:8px 0; transition:color .25s var(--ease); }
+  nav button:hover { color:var(--ink); }
+  .burger { display:none; font-family:var(--mono); font-size:var(--nav-px); letter-spacing:.28em; text-transform:uppercase; color:var(--silver); font-weight:500; }
+  #sheet { position:fixed; inset:60px 0 0 0; z-index:29; background:rgba(5,5,6,.97); display:none; flex-direction:column; padding:36px var(--pad); gap:8px; }
+  #sheet.open { display:flex; }
+  #sheet button { text-align:left; font-family:var(--cond); font-weight:400; font-size:46px; letter-spacing:-.01em; padding:8px 0; border-bottom:1px solid var(--line); }
+  @media (max-width:720px) { nav { display:none; } .burger { display:block; } }
+
+  /* story */
+  #story { position:relative; height:1600vh; }
+  .stage { position:sticky; top:0; height:100vh; height:100svh; overflow:hidden; background:var(--bg); }
+  canvas { position:absolute; inset:0; width:100%; height:100%; }
+  /* a coloured light behind the bike (screen blend: adds colour, never greys the dark). Colour, strength, position and size are DialKit dials. */
+  .glow { position:absolute; inset:0; pointer-events:none; z-index:1; opacity:0; mix-blend-mode:screen;
+    background:radial-gradient(ellipse var(--glow-w,60%) var(--glow-h,70%) at var(--glow-x,66%) var(--glow-y,58%), var(--glow-color,#c97b2c), transparent 72%); }
+  .shade { position:absolute; inset:0; pointer-events:none; z-index:2;
+    background:linear-gradient(90deg,rgba(5,5,6,.62) 0,rgba(5,5,6,.3) 28%,transparent 50%), linear-gradient(0deg,rgba(5,5,6,.6),transparent 22%); }
+
+  .copy { position:absolute; z-index:5; opacity:0; visibility:hidden; transition:visibility 0s .4s; }
+  .copy.on { visibility:visible; transition-delay:0s; }
+  .eyebrow { color:#8d9097; }
+  h1, h2 { font-family:var(--cond); font-weight:400; text-transform:none; line-height:.9; letter-spacing:-.025em; }
+  /* hero headline: each line rises out of its own mask, staggered */
+  .ln { display:block; overflow:hidden; padding:.06em 0 .08em; margin:-.06em 0 -.08em; }
+  .ln > span { display:block; transform:translateY(112%); transition:transform 1.05s var(--ease); transition-delay:calc(var(--i) * 90ms); will-change:transform; }
+  .copy.on .ln > span { transform:none; }
+  .silver { color:inherit; }
+  #hero { left:var(--pad); top:calc(50% + var(--hero-y) * 1%); transform:translateY(-50%); max-width:min(760px,56vw); }   /* the whole left block (eyebrow, headline, paragraph, button) is centred vertically on the viewport */
+  /* hero typography: oversized serif with an italic last line, optically pulled left, and a short hairline-ruled paragraph */
+  #hero h1 { margin-top:24px; margin-left:-.045em; font-size:clamp(40px,calc(var(--hero-vw) * 1vw),260px); line-height:.9; letter-spacing:-.035em; font-kerning:normal; text-rendering:optimizeLegibility; font-feature-settings:"kern","liga"; }
+  #hero h1 .it { font-style:italic; letter-spacing:-.045em; padding-right:.06em; }
+  #hero p { margin-top:30px; font-size:clamp(15px,1.15vw,17px); line-height:1.75; max-width:292px; color:#c3c7ce; letter-spacing:.005em; font-weight:300; }
+  #hero p { opacity:0; transform:translateY(14px); transition:opacity .9s var(--ease) .38s, transform .9s var(--ease) .38s; }
+  #hero.on p { opacity:1; transform:none; }
+  /* button: sharp-cornered, hairline outline; a thin line of light travels along its top and bottom edges */
+  .btn { position:relative; display:inline-flex; align-items:center; justify-content:center; margin-top:38px; padding:22px 46px; border:1px solid rgba(255,255,255,var(--btn-edge)); border-radius:0; background:rgba(255,255,255,.015);
+    font-family:var(--mono); font-size:11px; letter-spacing:.3em; text-transform:uppercase; font-weight:500; color:#fff; overflow:hidden;
+    transition:background .45s var(--ease), border-color .45s var(--ease); }
+  .btn::before, .btn::after { content:""; position:absolute; left:0; width:100%; height:1px; pointer-events:none;
+    background:linear-gradient(90deg, transparent 0, transparent 30%, rgba(255,255,255,.95) 50%, transparent 70%, transparent 100%); }
+  .btn::before { top:0; transform:translateX(-100%); animation:lineA var(--btn-speed) cubic-bezier(.65,0,.35,1) infinite; }
+  .btn::after { bottom:0; transform:translateX(100%); animation:lineB var(--btn-speed) cubic-bezier(.65,0,.35,1) infinite; animation-delay:calc(var(--btn-speed) * -.5); }
+  @keyframes lineA { 0% { transform:translateX(-100%); } 62%, 100% { transform:translateX(100%); } }
+  @keyframes lineB { 0% { transform:translateX(100%); } 62%, 100% { transform:translateX(-100%); } }
+  .btn:hover { border-color:rgba(255,255,255,.55); background:rgba(255,255,255,.05); }
+  .btn:hover::before, .btn:hover::after { animation-duration:calc(var(--btn-speed) * .45); }
+  #hero .btn { margin-top:30px; opacity:0; transition:opacity .9s var(--ease) .5s, background .35s var(--ease), border-color .35s var(--ease); }
+  #hero.on .btn { opacity:1; }
+  /* finale, laid out like a poster: small-caps line, big two-line serif headline, outlined button, "Back to top" at the foot.
+     The bike sits behind the stack, dimmed just enough that every word reads. */
+  .shade.c { background:radial-gradient(ellipse 66% 30% at 50% 50%, rgba(5,5,6,.84), rgba(5,5,6,.4) 62%, transparent 100%),
+                        linear-gradient(180deg,rgba(5,5,6,.4),transparent 22%,transparent 72%,rgba(5,5,6,.7)); opacity:0; }
+  #final { left:0; top:0; right:0; bottom:0; max-width:none; pointer-events:none; }
+  #final .stack { position:absolute; left:0; right:0; top:var(--final-top); translate:0 -50%; display:flex; flex-direction:column; align-items:center; text-align:center; padding:0 var(--pad); will-change:transform; }
+  /* finale typography: a hairline-flanked small-caps line with a champagne dot between its two thoughts, then a large
+     serif pair (roman + italic), tightly set with optical kerning */
+  #final .f-eye { display:flex; align-items:center; justify-content:center; gap:20px; color:#d4d7dc; white-space:nowrap; text-shadow:0 1px 18px rgba(0,0,0,.7); }
+  #final .f-eye::before, #final .f-eye::after { content:""; width:56px; height:1px; background:rgba(255,255,255,.28); flex:none; }
+  #final .f-eye i { width:5px; height:5px; border-radius:50%; background:var(--accent); flex:none; }
+  #final h2 { margin-top:30px; font-size:clamp(28px,calc(var(--final-vw) * 1vw),260px); line-height:.98; letter-spacing:-.035em; font-kerning:normal; text-rendering:optimizeLegibility; font-feature-settings:"kern","liga"; }
+  #final h2 { text-shadow:0 2px 36px rgba(0,0,0,.55); }
+  #final h2 .it { font-style:italic; letter-spacing:-.045em; padding-right:.05em; }
+  #final .btn { margin-top:46px; pointer-events:auto; background:rgba(5,5,6,.62); }
+  #final .back { position:absolute; left:50%; bottom:5vh; transform:translateX(-50%); pointer-events:auto; color:#fff; padding:12px 16px; transition:opacity .3s var(--ease); }
+  #final .back:hover { opacity:.6; }
+
+  /* technical-drawing pointer: ring on the part, hairline, dot beside the text */
+  svg#ptr { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:7; overflow:visible; }
+  #ptrLine { fill:none; stroke:var(--silver); stroke-width:1; opacity:0; }
+  #ptrRing { fill:none; stroke:var(--ink); stroke-width:1; opacity:0; }
+  #ptrDot, #ptrEnd { fill:var(--ink); opacity:0; }
+
+  /* part text: one fixed place for every part */
+  #panel { position:absolute; z-index:6; left:var(--pad); top:50%; width:min(430px,34vw); opacity:0; pointer-events:none; will-change:transform,opacity; }
+  #panel .num { color:var(--silver); }
+  #panel .name { margin-top:16px; font-family:var(--cond); font-weight:400; font-size:clamp(36px,calc(var(--panel-vw) * 1vw),180px); line-height:.9; letter-spacing:-.025em; }
+  #panel .desc { margin-top:22px; font-size:clamp(15px,1.15vw,17px); line-height:1.6; color:var(--silver); letter-spacing:-.005em; font-weight:300; max-width:350px; }
+
+  /* HUD */
+  .dial .hud { right:calc(var(--pad) + 62px); }
+  .hud { position:absolute; left:var(--pad); right:var(--pad); bottom:26px; z-index:8; display:flex; align-items:flex-end; justify-content:space-between; gap:24px; }
+  .hud .state { color:var(--silver); min-width:230px; }
+  .hud .state b { font-weight:500; color:var(--ink); }
+  .hud .mid { flex:1; align-self:center; position:relative; height:1px; background:var(--line); margin:0 8px 3px; }
+  .hud .mid i { position:absolute; left:0; top:-1px; height:3px; background:var(--ink); width:0; }
+  .hud .end { display:flex; align-items:center; gap:18px; color:var(--silver); min-width:250px; justify-content:flex-end; }
+  .step { font-family:var(--mono); font-size:var(--nav-px); letter-spacing:.28em; text-transform:uppercase; font-weight:500; color:var(--silver); padding:6px 4px; transition:color .25s var(--ease); }
+  .step:hover { color:var(--ink); }
+
+  #loader { position:fixed; inset:0; z-index:50; background:var(--bg); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px; transition:opacity .6s; }
+  #loader .brand { font-size:18px; }
+  #loader small { color:var(--dim); }
+
+  /* small screens: picture sits behind a compact card at the bottom */
+  @media (max-width:900px) {
+    #hero { top:84px; transform:none; max-width:none; right:var(--pad); } #hero h1 { font-size:clamp(40px,14.6vw,86px); margin-top:16px; } #hero p { margin-top:16px; padding-top:14px; font-size:14px; max-width:270px; line-height:1.6; }
+    #hero .btn { margin-top:18px; padding:18px 34px; }
+    #final .f-eye { flex-direction:column; gap:6px; white-space:normal; } #final .f-eye::before, #final .f-eye::after, #final .f-eye i { display:none; }
+    #final .stack { top:84px; translate:none; } #final h2 { font-size:clamp(22px,6.5vw,40px); margin-top:20px; line-height:1; letter-spacing:-.03em; } #final .btn { margin-top:26px; padding:18px 34px; } #final .back { bottom:20px; }
+    .shade { background:linear-gradient(180deg,rgba(5,5,6,.82) 0,rgba(5,5,6,.2) 42%,transparent 60%), linear-gradient(0deg,rgba(5,5,6,.78),transparent 30%); }
+    #panel { left:var(--pad); right:var(--pad); top:auto; bottom:76px; width:auto; padding:14px 16px; background:rgba(10,10,12,.92); border:1px solid var(--line); }
+    #panel .name { font-size:38px; margin-top:6px; } #panel .desc { margin-top:8px; font-size:13px; line-height:1.5; }
+    .hud { bottom:18px; gap:12px; } .hud .state { min-width:0; font-size:10px; } .hud .end { min-width:0; } .hud .end .hint { display:none; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition:none!important; animation:none!important; scroll-behavior:auto!important; } .btn::before, .btn::after { transform:none!important; opacity:.55; } }
+</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dialkit@2.1.0/dist/vanilla/styles.css">
+</head>
+<body>
+<div id="loader"><div class="brand">Corvo</div><small class="cap">Loading <span id="pct">0</span>%</small></div>
+
+<header>
+  <a class="brand" href="#" data-stop="0" aria-label="Corvo — top">Corvo</a>
+  <nav aria-label="Primary">
+    <button data-stop="0">Eclipse</button><button data-stop="1">Build</button><button data-stop="7">Philosophy</button><button data-stop="14">Reserve</button>
+  </nav>
+  <button class="burger" id="burger" aria-expanded="false" aria-controls="sheet">Menu</button>
+</header>
+<div id="sheet" role="dialog" aria-label="Menu">
+  <button data-stop="0">Eclipse</button><button data-stop="1">Build</button><button data-stop="7">Philosophy</button><button data-stop="14">Reserve</button>
+</div>
+
+<main>
+<section id="story" aria-label="Corvo Eclipse camera tour">
+  <div class="stage" id="stage">
+    <canvas id="c" role="img" aria-label="Corvo Eclipse motorcycle, assembled, with the camera moving to each of its thirteen components in turn"></canvas>
+    <div class="glow" id="glow" aria-hidden="true"></div>
+    <div class="shade" id="shade"></div>
+    <div class="shade c" id="shadeC"></div>
+    <svg id="ptr" aria-hidden="true"><path id="ptrLine"/><circle id="ptrRing" r="7"/><circle id="ptrDot" r="1.8"/><circle id="ptrEnd" r="2.6"/></svg>
+
+    <div class="copy" id="hero">
+      <div class="eyebrow cap">Corvo / Eclipse — 01</div>
+      <h1 aria-label="Built to come apart.">
+        <span class="ln" aria-hidden="true"><span style="--i:0">Built to Come</span></span>
+        <span class="ln" aria-hidden="true"><span class="it" style="--i:1">Apart.</span></span>
+      </h1>
+      <p>Thirteen precision-made components. One unmistakable machine.</p>
+      <a class="btn" href="#" data-stop="1">Explore the build</a>
+    </div>
+
+    <div id="panel" aria-live="polite">
+      <div class="num cap" id="pnum"></div><div class="name" id="pname"></div><p class="desc" id="pdesc"></p>
+    </div>
+
+    <div class="copy" id="final">
+      <div class="stack" id="stack">
+        <div class="f-eye cap"><span>Corvo Eclipse</span></div>
+        <h2 aria-label="Thirteen precision-made components. One unmistakable machine.">
+          <span class="ln" aria-hidden="true"><span style="--i:0">Thirteen precision-made components.</span></span>
+          <span class="ln" aria-hidden="true"><span style="--i:1">One unmistakable <span class="it">machine.</span></span></span>
+        </h2>
+        <a class="btn" href="mailto:reserve@corvo.example?subject=Reserve%20Corvo%20Eclipse">Reserve yours</a>
+      </div>
+      <a class="back cap" href="#" data-stop="0">Back to top</a>
+    </div>
+
+    <div class="hud">
+      <div class="state cap" id="state" aria-live="off"><b>00 / 13</b> — Assembled</div>
+      <div class="mid" id="prog" role="progressbar" aria-label="Tour progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="fill"></i></div>
+      <div class="end cap"><button class="step" id="prev" aria-label="Previous part">← Prev</button><button class="step" id="next" aria-label="Next part">Next →</button><span class="hint" id="hint">Scroll to explore</span></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/dialkit@2.1.0/dist/vanilla/browser.global.js"></script>
+<script>
+/* ============================== EDIT HERE ==============================
+   Scroll timing, as relative weights (they are normalised to the full scroll length).
+   Camera positions and angles for each part live in build_tour.py (PART_DEFS): they are baked into frames/. */
+const TIMING = { heroHold: 0.9, travel: 0.85, hold: 0.85, finalTravel: 1.7, finalHold: 0.9 };   // the long final reveal gets the most scroll
+const W0 = 1600, H0 = 900;
+// Camera feel. landing: how softly the camera settles (lower = longer, floatier landing); boost + range: extra stiffness
+// when the camera is far from where you scrolled to, so it never feels like it is hesitating or lagging behind the wheel.
+const CAMERA_FEEL = { landing: 8.5, boost: 1.4, range: 0.012 };   // measured: a wheel notch reaches 50% in ~0.10 s and settles in ~0.56 s, no overshoot
+// more live-tunable values (all adjustable from the DialKit panel; these are the defaults)
+const FIN = { scale: 1.04, y: 0.47 };                              // finale: bike size relative to the screen, and its vertical position
+const LCFG = { radius: 230, grow: 90, strength: 0.85, pool: 0.06 };  // pointer light
+const PAR = { scroll: 1, pointer: 1 };                              // parallax strength multipliers
+const SCR = { final: 0.9 };                                           // finale scrim strength
+const GLOW = { hero: 0.25, final: 0.15 };                           // colour glow strength on the first and last screens
+/* ======================================================================= */
+
+const $ = id => document.getElementById(id);
+const story = $('story'), stage = $('stage'), canvas = $('c'), ctx = canvas.getContext('2d');
+const REDUCE = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sm = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+const mixn = (a, b, t) => a + (b - a) * t;
+const pad2 = n => String(n).padStart(2, '0');
+const isNarrow = () => innerWidth <= 900;
+
+const sampler = document.createElement('canvas'); sampler.width = sampler.height = 1;
+const sctx = sampler.getContext('2d', { willReadFrequently: true });
+let mx = innerWidth / 2, my = innerHeight / 2, tx = mx, ty = my, spotO = 0, seen = false;   // pointer light state
+const hudEl = document.querySelector('.hud');
+stage.addEventListener('pointermove', e => { const r = stage.getBoundingClientRect(); tx = e.clientX - r.left; ty = e.clientY - r.top; if (!seen) { mx = tx; my = ty; } seen = true; });
+stage.addEventListener('pointerleave', () => { seen = false; });
+let DATA, N = 0, K = 1, TOTAL = 1, imgs = [], ready = false, cur = 0, camVel = 0, sp = 0, lastT = performance.now(), shownPart = -1, lastPart = 0;
+let TL = [];                                     // timeline: {type:'hold'|'travel', s, u0, u1}
+let HOLDS = [];                                  // per stop: [u0,u1]; stop 0 = hero, 1..N = parts, N+1 = final
+
+/* ---------- timeline from TIMING ---------- */
+function buildTimeline() {
+  const raw = [];
+  raw.push({ type: 'hold', s: 0, w: TIMING.heroHold });
+  for (let s = 0; s <= N; s++) {
+    raw.push({ type: 'travel', s, w: s === N ? TIMING.finalTravel : TIMING.travel });
+    raw.push({ type: 'hold', s: s + 1, w: s === N ? TIMING.finalHold : TIMING.hold });
+  }
+  const sum = raw.reduce((a, e) => a + e.w, 0); let u = 0;
+  TL = raw.map(e => { const o = { type: e.type, s: e.s, u0: u, u1: u + e.w / sum }; u = o.u1; return o; });
+  HOLDS = []; TL.forEach(e => { if (e.type === 'hold') HOLDS[e.s] = [e.u0, e.u1]; });
+}
+const travelInto = s => TL.find(e => e.type === 'travel' && e.s === s - 1);   // the move that ends on stop s
+const travelOutOf = s => TL.find(e => e.type === 'travel' && e.s === s);
+
+/* ---------- scroll <-> stops ---------- */
+const maxScroll = () => story.offsetHeight - innerHeight;
+const progress = () => Math.max(0, Math.min(1, -story.getBoundingClientRect().top / maxScroll()));
+const stopU = s => { const h = HOLDS[s]; return (h[0] + h[1]) / 2; };
+function goStop(s) { scrollTo({ top: story.offsetTop + stopU(Math.max(0, Math.min(N + 1, s))) * maxScroll(), behavior: REDUCE ? 'auto' : 'smooth' }); $('sheet').classList.remove('open'); $('burger').setAttribute('aria-expanded', 'false'); }
+function nearestStop(u) { let best = 0, bd = 9; HOLDS.forEach((h, s) => { const d = Math.abs(u - (h[0] + h[1]) / 2); if (d < bd) { bd = d; best = s; } }); return best; }
+function step(dir) {
+  const u = progress(), n = nearestStop(u), c = stopU(n);
+  let target = n + dir;
+  if (dir > 0 && c > u + 0.003) target = n;         // already heading to this stop
+  if (dir < 0 && c < u - 0.003) target = n;
+  goStop(target);
+}
+document.querySelectorAll('[data-stop]').forEach(el => el.addEventListener('click', e => { e.preventDefault(); goStop(parseInt(el.dataset.stop, 10)); }));
+$('burger').onclick = () => { const o = $('sheet').classList.toggle('open'); $('burger').setAttribute('aria-expanded', o); };
+$('next').onclick = () => step(1); $('prev').onclick = () => step(-1);
+addEventListener('keydown', e => { if (/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return; if (e.key === 'ArrowRight') step(1); if (e.key === 'ArrowLeft') step(-1); });
+
+/* ---------- picture ---------- */
+// where the bike sits inside the 1600x900 final frame (fractions): used to centre it on screen for the finale
+const BIKE_C = { x: 0.5, y: 0.52, w: 0.88 };                       // where the whole bike sits in the finale frame; replaced by the exported value on load
+function rect(heroW, fin = 0) {
+  const iw = innerWidth, ih = innerHeight;
+  let base;
+  if (!isNarrow()) { const s = Math.max(iw / W0, ih / H0); base = { x: (iw - W0 * s) / 2, y: (ih - H0 * s) / 2, w: W0 * s, h: H0 * s }; }
+  else { const w = iw * 1.7, h = w * H0 / W0; base = { x: iw / 2 - 0.64 * w, y: mixn(ih * 0.41 - 0.5 * h, ih * 0.66 - 0.55 * h, heroW), w, h }; }
+  if (fin <= 0) return base;
+  // finale: slide the picture so the bike lands on the exact horizontal centre, in the lower half behind the text stack
+  const narrow = isNarrow(), w2 = narrow ? iw * 0.96 / BIKE_C.w : base.w * FIN.scale, h2 = w2 * H0 / W0;
+  const t = { x: iw / 2 - BIKE_C.x * w2, y: ih * (narrow ? 0.7 : FIN.y) - BIKE_C.y * h2, w: w2, h: h2 };
+  return { x: mixn(base.x, t.x, fin), y: mixn(base.y, t.y, fin), w: mixn(base.w, t.w, fin), h: mixn(base.h, t.h, fin) };
+}
+function resize() {
+  const d = Math.min(devicePixelRatio || 1, 1.5);
+  canvas.width = innerWidth * d; canvas.height = innerHeight * d;
+  if (ready) frame(true);
+}
+const LIGHT = { x: 0, y: 0, r: 300, a: 0 };                     // set each frame: where the pointer light is, how big, how strong
+const lightCv = document.createElement('canvas'), lctx = lightCv.getContext('2d');
+function draw(f, r, fin = 0) {
+  // blend the two nearest rendered frames, so a move is continuous rather than stepping from picture to picture
+  const i0 = Math.max(0, Math.min(TOTAL - 1, Math.floor(f))), i1 = Math.min(TOTAL - 1, i0 + 1), a = f - i0;
+  const im = imgs[i0]; if (!im || !im.naturalWidth) return;
+  const d = canvas.width / innerWidth, x = r.x * d, y = r.y * d, w = r.w * d, h = r.h * d;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(im, x, y, w, h);
+  if (fin > 0.001) {                       // the finale shrinks the picture, so match the page to the picture's own backdrop (no visible box)
+    sctx.drawImage(im, 0, 0, 24, 24, 0, 0, 1, 1);
+    const p = sctx.getImageData(0, 0, 1, 1).data;
+    stage.style.backgroundColor = `rgb(${Math.round(mixn(5, p[0], fin))},${Math.round(mixn(5, p[1], fin))},${Math.round(mixn(6, p[2], fin))})`;
+  } else stage.style.backgroundColor = '';
+  const im2 = imgs[i1];
+  if (a > 0.02 && i1 !== i0 && im2 && im2.naturalWidth) { ctx.globalAlpha = a; ctx.drawImage(im2, x, y, w, h); ctx.globalAlpha = 1; }
+  // pointer light: re-light the picture itself. The patch of the finished frame under the cursor is copied, masked to a soft round
+  // falloff and added back on top, so metal and paint pick up real highlights (instead of a flat glow laid over the top).
+  if (LIGHT.a > 0.01) {
+    const R2 = Math.round(LIGHT.r * d), cx = Math.round(LIGHT.x * d), cy = Math.round(LIGHT.y * d), S = R2 * 2;
+    const sx = Math.max(0, cx - R2), sy = Math.max(0, cy - R2), sw = Math.min(canvas.width, cx + R2) - sx, sh = Math.min(canvas.height, cy + R2) - sy;
+    if (sw > 4 && sh > 4) {
+      if (lightCv.width !== S) lightCv.width = lightCv.height = S;
+      lctx.globalCompositeOperation = 'source-over'; lctx.clearRect(0, 0, S, S);
+      lctx.drawImage(canvas, sx, sy, sw, sh, sx - (cx - R2), sy - (cy - R2), sw, sh);
+      const g = lctx.createRadialGradient(R2, R2, 0, R2, R2, R2);
+      g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(0.3, 'rgba(0,0,0,.78)'); g.addColorStop(0.65, 'rgba(0,0,0,.26)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+      lctx.globalCompositeOperation = 'destination-in'; lctx.fillStyle = g; lctx.fillRect(0, 0, S, S);
+      ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = Math.min(1, LIGHT.a * LCFG.strength);
+      ctx.drawImage(lightCv, cx - R2, cy - R2);                                                    // one pass: adds back the patch's own brightness, so lit metal and paint gain highlights
+      const gl = ctx.createRadialGradient(cx, cy, 0, cx, cy, R2);                                  // a faint pool on the floor, so the light is visible on dark areas too
+      gl.addColorStop(0, 'rgba(255,243,226,' + LCFG.pool + ')'); gl.addColorStop(1, 'rgba(255,243,226,0)');
+      ctx.fillStyle = gl; ctx.fillRect(cx - R2, cy - R2, S, S);
+      ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+    }
+  }
+  // feather the picture's edges into the page: top/bottom on phones, and all four sides once the finale shrinks it
+  const fyK = isNarrow() ? 0.07 : 0, fxL = 0, fxR = 0;                    // the finale frame is full-bleed on desktop: nothing to feather
+  if (fyK > 0 || fxL > 0) {
+    ctx.globalCompositeOperation = 'destination-out';
+    const edge = (a, b, c, e, rx, ry, rw, rh) => { const g = ctx.createLinearGradient(a, b, c, e); g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(rx, ry, rw, rh); };
+    const fy = h * fyK, fxl = w * fxL, fxr = w * fxR;
+    if (fy > 0) { edge(0, y, 0, y + fy, x, y, w, fy); edge(0, y + h, 0, y + h - fy, x, y + h - fy, w, fy); }
+    if (fxl > 0) { edge(x, 0, x + fxl, 0, x, y, fxl, h); edge(x + w, 0, x + w - fxr, 0, x + w - fxr, y, fxr, h); }
+    ctx.globalCompositeOperation = 'source-over';
+  }
+}
+
+/* ---------- one frame of the page ---------- */
+const copy = { hero: $('hero'), final: $('final') };
+function setCopy(el, o) { el.style.opacity = o; el.classList.toggle('on', o > 0.05); }
+
+function frame(once) {
+  if (!ready) return requestAnimationFrame(frame);
+  const target = progress();
+  // single quick damping step, independent of frame rate: the camera follows the scroll closely (about 0.15 s behind),
+  // with just enough easing to take the edge off. (An earlier two-stage version felt like it was lagging.)
+  const now = performance.now(), dt = Math.min(0.05, (now - lastT) / 1000); lastT = now;
+  // the camera follows the scroll like a heavy, well-damped camera head: a critically damped spring (no overshoot). Velocity is
+  // continuous, so wheel ticks and trackpad flicks never make the picture jerk; it eases out of every move and into every stop.
+  if (REDUCE || once === true) { cur = target; camVel = 0; }
+  else {
+    const steps = Math.max(1, Math.ceil(dt / 0.006)), h_ = dt / steps;
+    for (let i = 0; i < steps; i++) {
+      // stiffness grows with distance: far from the target the camera reacts promptly (no hesitation when a scroll begins),
+      // close to it the spring relaxes to its softer base value, so every stop is a long, gentle landing
+      const W_ = CAMERA_FEEL.landing * (1 + CAMERA_FEEL.boost * Math.min(1, Math.abs(target - cur) / CAMERA_FEEL.range));
+      camVel += (W_ * W_ * (target - cur) - 2 * W_ * camVel) * h_; cur += camVel * h_;
+    }
+    if (Math.abs(target - cur) < 0.00003 && Math.abs(camVel) < 0.0004) { cur = target; camVel = 0; }
+  }
+  const u = cur;
+
+  // which camera frame?
+  let f = 0;
+  if (REDUCE) f = nearestStop(u) * K;                                  // simple changes between camera stops
+  else { const e = TL.find(t => u >= t.u0 && u <= t.u1) || TL[TL.length - 1]; f = e.type === 'hold' ? e.s * K : (e.s + (u - e.u0) / (e.u1 - e.u0)) * K; }
+  f = Math.min(TOTAL - 1, f);
+
+  // part text: arrives as the camera settles, leaves as it sets off
+  let vis = 0, which = -1, slide = 0;
+  for (let p = 0; p < N; p++) {
+    const s = p + 1, inT = travelInto(s), outT = travelOutOf(s), Lin = inT.u1 - inT.u0, Lout = outT.u1 - outT.u0;
+    let o = REDUCE ? ((u >= inT.u1 - 0.0001 && u <= outT.u0 + 0.0001) || (nearestStop(u) === s && u > inT.u0 + Lin * 0.5 && u < outT.u1 - Lout * 0.5) ? 1 : 0)
+                   : sm(inT.u1 - Lin * 0.45, inT.u1, u) * (1 - sm(outT.u0, outT.u0 + Lout * 0.28, u));
+    if (o > vis) { vis = o; which = p; slide = (u < inT.u1 ? 1 - sm(inT.u1 - Lin * 0.45, inT.u1, u) : -sm(outT.u0, outT.u0 + Lout * 0.28, u)); }
+  }
+  if (which >= 0 && which !== shownPart) {
+    const p = DATA.parts[which];
+    $('pnum').textContent = `${pad2(which + 1)} / ${pad2(N)}`; $('pname').textContent = p.name; $('pdesc').textContent = p.desc; shownPart = which;
+  }
+  if (which >= 0) lastPart = which;
+  const panel = $('panel');
+  panel.style.opacity = vis;
+  panel.style.transform = `translateY(calc(-50% + ${slide * 22}px))`;
+  if (isNarrow()) panel.style.transform = `translateY(${slide * 14}px)`;
+
+  // hero + final copy
+  const hT = travelOutOf(0), fT = travelOutOf(N);
+  const heroO = REDUCE ? (u < hT.u1 ? 1 : 0) : 1 - sm(hT.u0, hT.u0 + (hT.u1 - hT.u0) * 0.4, u);
+  const finalO = REDUCE ? (u >= fT.u1 ? 1 : 0) : sm(fT.u0 + (fT.u1 - fT.u0) * 0.55, fT.u1, u);
+  setCopy(copy.hero, heroO); setCopy(copy.final, finalO);
+  $('shade').style.opacity = Math.max(0.55 * vis, heroO);
+  $('shadeC').style.opacity = Math.min(1, finalO * SCR.final);
+  $('glow').style.opacity = Math.min(1, heroO * GLOW.hero + finalO * GLOW.final);
+
+  // pointer: eased in screen space (frame-rate independent). It drives the light and a slight depth shift on the last screen.
+  if (!REDUCE) {
+    const k = once === true ? 1 : 1 - Math.exp(-dt * 13);
+    mx += (tx - mx) * k; my += (ty - my) * k;
+    spotO += ((seen ? 1 : 0) - spotO) * (once === true ? 1 : 1 - Math.exp(-dt * 7));
+  }
+  // finale composition eases in over the last part of the pull-back, so the bike glides to the centre as the camera settles
+  const fL = fT.u1 - fT.u0, finK = REDUCE ? finalO : sm(fT.u0 + fL * 0.3, fT.u1 - fL * 0.02, u);
+
+  // parallax. Scroll: during the 13 -> final move the picture drifts and scales on its own curve while the text stack rises on a
+  // different one, so the two layers separate and settle at different times. Pointer: both layers lean a few pixels, in opposite directions.
+  const pr = Math.max(0, Math.min(1, (u - fT.u0) / fL));
+  const bell = REDUCE ? 0 : sm(0, 0.25, pr) * (1 - sm(0.25, 1, pr));           // 0 -> peak -> 0: no jump when the move starts or ends
+  const pdx = (mx - innerWidth / 2) / innerWidth, pdy = (my - innerHeight / 2) / innerHeight, pm = REDUCE ? 0 : finK * spotO;
+  let R = rect(heroO, finK);
+  const csx = innerWidth / 2, csy = innerHeight * 0.62, bsc = 1 + bell * 0.06 * PAR.scroll + pm * 0.012 * PAR.pointer;
+  R = { x: csx + (R.x - csx) * bsc - pdx * 30 * pm * PAR.pointer, y: csy + (R.y - csy) * bsc + bell * 46 * PAR.scroll - pdy * 18 * pm * PAR.pointer, w: R.w * bsc, h: R.h * bsc };
+  const tyText = REDUCE ? 0 : (1 - sm(0.3, 1, pr)) * 120 * PAR.scroll * (u > fT.u0 ? 1 : 0) * finalO;
+  $('stack').style.transform = `translate3d(${(pdx * 12 * pm * PAR.pointer).toFixed(2)}px, ${(tyText + pdy * 8 * pm * PAR.pointer).toFixed(2)}px, 0)`;
+
+  // light: radius grows in as it appears; strength follows the finale and the pointer
+  LIGHT.x = mx; LIGHT.y = my; LIGHT.r = LCFG.radius + LCFG.grow * spotO; LIGHT.a = REDUCE ? 0 : finK * spotO;
+  hudEl.style.opacity = 1 - finalO; hudEl.style.pointerEvents = finalO > 0.5 ? 'none' : '';
+  draw(f, R, finK);
+
+  // pointer: anchored on the part's real surface point, which the renderer projected for every frame
+  const L = $('ptrLine'), G = $('ptrRing'), D = $('ptrDot'), E = $('ptrEnd');
+  let po = 0;
+  if (which >= 0 && DATA.pts) {
+    const f0 = Math.floor(f), f1 = Math.min(TOTAL - 1, f0 + 1), t = f - f0, a0 = DATA.pts[f0][which], a1 = DATA.pts[f1][which];
+    const ax = R.x + mixn(a0[0], a1[0], t) * R.w, ay = R.y + mixn(a0[1], a1[1], t) * R.h, inView = a0[2] > 0 && ax > 0 && ax < innerWidth && ay > 60 && ay < innerHeight - 40;
+    po = inView ? vis : 0;
+    G.setAttribute('cx', ax); G.setAttribute('cy', ay); D.setAttribute('cx', ax); D.setAttribute('cy', ay);
+    if (!isNarrow()) {
+      const nm = $('pname').getBoundingClientRect(), ds = $('pdesc').getBoundingClientRect();
+      const ex = Math.max(nm.right, ds.right) + 18, ey = nm.top + nm.height / 2, jx = ex + 34;
+      const dx = ax - jx, dy = ay - ey, len = Math.hypot(dx, dy) || 1, sx = ax - dx / len * 8, sy = ay - dy / len * 8;
+      L.setAttribute('d', `M${ex},${ey}H${jx}L${sx},${sy}`); E.setAttribute('cx', ex); E.setAttribute('cy', ey);
+      L.style.opacity = po * 0.85; E.style.opacity = po;
+    } else { L.style.opacity = 0; E.style.opacity = 0; }
+  } else { L.style.opacity = 0; E.style.opacity = 0; }
+  G.style.opacity = po; D.style.opacity = po;
+
+  // HUD
+  let st, hint;
+  if (heroO > 0.5) { st = `<b>00 / ${pad2(N)}</b> — Assembled`; hint = 'Scroll to explore'; }
+  else if (finalO > 0.5) { st = `<b>${pad2(N)} / ${pad2(N)}</b> — Complete`; hint = 'Reserve yours ↑'; }
+  else { st = `<b>${pad2(lastPart + 1)} / ${pad2(N)}</b> — ${DATA.parts[lastPart].name}`; hint = 'Scroll to continue'; }
+  if ($('state').dataset.s !== st) { $('state').innerHTML = st; $('state').dataset.s = st; }
+  $('hint').textContent = hint;
+  $('fill').style.width = (u * 100) + '%'; $('prog').setAttribute('aria-valuenow', Math.round(u * 100));
+  if (once !== true) requestAnimationFrame(frame);
+}
+
+/* ---------- load ---------- */
+fetch('tour.json').then(r => r.json()).then(d => {
+  DATA = d; N = d.parts.length; K = d.K; TOTAL = d.frames; buildTimeline();
+  if (d.finalBBox) { const b = d.finalBBox; BIKE_C.x = (b[0] + b[2]) / 2; BIKE_C.y = (b[1] + b[3]) / 2; BIKE_C.w = b[2] - b[0]; }
+  let next = 0, loaded = 0;
+  const done = () => { loaded++; $('pct').textContent = Math.round(loaded / TOTAL * 100);
+    if (loaded === TOTAL) { ready = true; $('loader').style.opacity = 0; setTimeout(() => $('loader').remove(), 700); resize(); } };
+  const get = (i, tries = 0) => new Promise(res => {
+    const im = new Image();
+    im.onload = () => { imgs[i] = im; done(); res(); };
+    im.onerror = () => { if (tries < 4) setTimeout(() => get(i, tries + 1).then(res), 250 * (tries + 1)); else { imgs[i] = im; done(); res(); } };
+    im.src = `frames/${String(i).padStart(4, '0')}.jpg` + (tries ? `?r=${tries}` : '');
+  });
+  const worker = async () => { while (next < TOTAL) await get(next++); };
+  for (let w = 0; w < 6; w++) worker();
+  addEventListener('resize', resize);
+  resize(); requestAnimationFrame(frame);
+  if (DIAL_VALUES) applyDial(DIAL_VALUES);                       // the panel may have been ready before the data was
+});
+
+/* ============================== DialKit: live tuning panel ==============================
+   https://github.com/joshpuckett/dialkit (plain-JavaScript adapter, no dependencies, loaded above from the npm CDN, pinned).
+   Slider tuples are [default, min, max, step]. Values persist in localStorage (key "dialkit:corvo-design-2"; bump the id in createDialKit when you change defaults, or old saved values will win), so your tuning survives
+   a reload. "Copy" in the panel puts the current values on the clipboard. To hide the panel for a launch, delete the two
+   DialKit tags in <head>/<body> or set defaultOpen:false below. If the CDN is unreachable the page simply runs on its defaults. */
+let DIAL_VALUES = null;
+function applyDial(v) {
+  const root = document.documentElement.style;
+  Object.assign(CAMERA_FEEL, v.camera);
+  Object.assign(TIMING, v.scroll);
+  if (DATA) buildTimeline();                                      // scroll timings change where every stop sits
+  root.setProperty('--hero-vw', v.type.heroSize); root.setProperty('--final-vw', v.type.finalSize); root.setProperty('--panel-vw', v.type.partSize);
+  root.setProperty('--nav-px', v.type.navSize + 'px');
+  root.setProperty('--hero-y', v.hero.verticalOffset);
+  FIN.scale = v.finale.bikeScale; FIN.y = v.finale.bikeY; SCR.final = v.finale.scrim; root.setProperty('--final-top', 'calc(50% + ' + v.finale.textOffset + 'vh)');
+  LCFG.radius = v.light.radius; LCFG.strength = v.light.strength; LCFG.pool = v.light.pool;
+  PAR.scroll = v.parallax.scroll; PAR.pointer = v.parallax.pointer;
+  root.setProperty('--btn-speed', v.button.lineSpeed + 's'); root.setProperty('--btn-edge', v.button.edge);
+  GLOW.hero = v.glow.strength; GLOW.final = v.glow.finalStrength; root.setProperty('--glow-color', v.glow.color);
+  root.setProperty('--glow-x', v.glow.x + '%'); root.setProperty('--glow-y', v.glow.y + '%'); root.setProperty('--glow-w', v.glow.size + '%'); root.setProperty('--glow-h', (v.glow.size * 1.15) + '%');
+  root.setProperty('--accent', v.color.accent); root.setProperty('--ink', v.color.ink); root.setProperty('--silver', v.color.silver);
+  if (ready) frame(true);
+}
+(function initDial() {
+  if (!window.DialKit) return;
+  document.documentElement.classList.add('dial');
+  DialKit.createDialRoot({ position: 'bottom-right', theme: 'dark', defaultOpen: true });
+  const kit = DialKit.createDialKit('Corvo', {
+    camera:   { landing: [CAMERA_FEEL.landing, 4, 16, 0.1], boost: [CAMERA_FEEL.boost, 0, 3, 0.1], range: [CAMERA_FEEL.range, 0.002, 0.06, 0.001] },
+    scroll:   { _collapsed: true, heroHold: [TIMING.heroHold, 0.2, 3, 0.05], travel: [TIMING.travel, 0.2, 3, 0.05], hold: [TIMING.hold, 0.2, 3, 0.05], finalTravel: [TIMING.finalTravel, 0.2, 3, 0.05], finalHold: [TIMING.finalHold, 0.2, 3, 0.05] },
+    type:     { _collapsed: true, heroSize: [7.3, 4, 12, 0.1], finalSize: [4.9, 2.5, 9, 0.1], partSize: [5.8, 3, 9, 0.1], navSize: [12.5, 9, 17, 0.5] },
+    hero:     { _collapsed: true, verticalOffset: [0, -25, 25, 0.5] },
+    finale:   { _collapsed: true, bikeScale: [FIN.scale, 0.6, 1.4, 0.01], bikeY: [FIN.y, 0.45, 0.9, 0.005], textOffset: [0, -30, 30, 0.5], scrim: [1, 0, 1.6, 0.05] },
+    light:    { _collapsed: true, radius: [LCFG.radius, 80, 520, 5], strength: [LCFG.strength, 0, 1.6, 0.05], pool: [LCFG.pool, 0, 0.25, 0.01] },
+    parallax: { _collapsed: true, scroll: [1, 0, 3, 0.1], pointer: [1, 0, 3, 0.1] },
+    button:   { _collapsed: true, lineSpeed: [3.8, 1, 10, 0.1], edge: [0.18, 0, 0.6, 0.01] },
+    glow:     { _collapsed: false, color: '#c97b2c', strength: [GLOW.hero, 0, 1, 0.01], finalStrength: [GLOW.final, 0, 1, 0.01], x: [66, 0, 100, 1], y: [58, 0, 100, 1], size: [60, 20, 120, 1] },
+    color:    { _collapsed: true, accent: '#c9b08a', ink: '#f4f5f6', silver: '#aeb3ba' },
+  }, { id: 'corvo-design-6', persist: true });
+  window.corvoDial = kit;                                         // console access: corvoDial.setValue('type.heroSize', 9), corvoDial.values
+  kit.subscribe(v => { DIAL_VALUES = v; applyDial(v); });
+})();
+</script>
+</body>
+</html>
